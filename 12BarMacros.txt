@@ -1,5 +1,5 @@
 <*
-12 Bar Blues EADGBE No Macros
+12 Bar Blues EADGBE Using Macros
 To export this as a MIDI file use... MIDITOR MIDITOR.TXT MIDITOR.MID 
 *>
 <* Start Of Song *>
