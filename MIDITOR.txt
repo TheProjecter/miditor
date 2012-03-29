@@ -41,6 +41,8 @@ Macros are prioritised by the number of characters they have in their name, the 
 Macros can only be defined and invoked outside of [], as everything within [] is ignored by the preprocessor.
 A 3rd party language independent macro preprocessor can of course be used instead.
 
+Character remapper <]C[R> remaps character C to R just before the preprocesser finally outputs characters.
+for instance if you are not happy with using the - symbol for holds you can use another such as _ by using <]_[-> .
 
 | Bar marker
 Note elements within a bar are 0123456789TE.-
