@@ -149,11 +149,11 @@ void DBGEvent(SysF32 t,SysU8 *m)
 
 struct MidHdrS
 {
-    SysC8 HeaderID[4];
+    SysU8 HeaderID[4];
     SysU8 HeaderSize[4];
     SysU8 Type[2],Tracks[2],TimeDivision[2];
-    SysC8 TrackID[4];
-    SysC8 TrackSize[4];
+    SysU8 TrackID[4];
+    SysU8 TrackSize[4];
 };
 
 SysU32 MIDITOR::SToTicks(SysF32 t)
@@ -230,6 +230,7 @@ void MIDITOR::Render(const SysC8 *MIDIFileName)
     wm[j++]=0;
     wm[j++]=0xff;
     wm[j++]=0x2f;
+    wm[j++]=0;
     SysU32 s=j-sizeof(h);
     h.TrackSize[0]=(s>>24)&0xff;
     h.TrackSize[1]=(s>>16)&0xff;

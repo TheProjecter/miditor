@@ -11,7 +11,7 @@ struct MIDITOR
     void (*NoteCallBack)(MIDITOR *p,const SysC8 *b,SysS32 i);
     SysS32 (*IsNoteCallBack)(SysC8 c);
 
-    enum {UseInternalTime=-1,MaxWorkMemory=(1<<24),MaxMacros=(1<<20),MaxSavedTimes=(1<<16),MaxRemaps=128,MidBPM=120,MidTicksPerBeat=500};
+    enum {UseInternalTime=-1,MaxWorkMemory=(1<<24),MaxMacros=(1<<20),MaxSavedTimes=(1<<16),MaxRemaps=128,MidBPM=120,MidTicksPerBeat=960};
     void Add(const SysU8 *s,SysU32 l,SysF32 t=UseInternalTime);
     void Add3(SysU8 a,SysU8 b,SysU8 c,SysF32 t=UseInternalTime);
     void Add2(SysU8 a,SysU8 b,SysF32 t=UseInternalTime);
