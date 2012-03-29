@@ -76,7 +76,7 @@ bn Bend +/- 1.0(full) over notes duration, this is affected by the bend range se
 dn note duration where n is scale of bar duration.
 rn rest (delay) before playing note where n is scale of bar duration .
 x Cancel note, outside of [].
-m(n)(a)(b)(c) 	MIDI message c (2 or 3) arguments in hex.
+m(n)(a)(b)(c) 	MIDI message n (2 or 3) arguments in hex.
 vn 		Press(+)/release(-) velocity.
 *>
 
