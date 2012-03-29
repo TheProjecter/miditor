@@ -11,7 +11,7 @@ struct MIDITOR
     void (*NoteCallBack)(MIDITOR *p,const SysC8 *b,SysS32 i);
     SysS32 (*IsNoteCallBack)(SysC8 c);
 
-    enum {UseInternalTime=-1,MaxWorkMemory=(1<<24),MaxMacros=(1<<20),MaxSavedTimes=(1<<16),MidBPM=120,MidTicksPerBeat=500};
+    enum {UseInternalTime=-1,MaxWorkMemory=(1<<24),MaxMacros=(1<<20),MaxSavedTimes=(1<<16),MaxRemaps=128,MidBPM=120,MidTicksPerBeat=500};
     void Add(const SysU8 *s,SysU32 l,SysF32 t=UseInternalTime);
     void Add3(SysU8 a,SysU8 b,SysU8 c,SysF32 t=UseInternalTime);
     void Add2(SysU8 a,SysU8 b,SysF32 t=UseInternalTime);
@@ -43,6 +43,7 @@ struct MIDITOR
     SysF32 NoteTime;
     SysF32 SavedTime[MaxSavedTimes];
     SysS32 SavedTimeIndex;
+    SysC8 Remap[MaxRemaps];
     void BarCommands(const SysC8 *b,SysS32 i);
     SysS32 Next(const SysC8 *b,SysS32 i,SysC8 c);
     SysS32 SkipBracket(const SysC8 *b,SysS32 i);
@@ -67,7 +68,7 @@ struct MIDITOR
     SysU32 SToTicks(SysF32 t);
     SysF32 TicksToS(SysU32 t);
     SysU32 DeltaTime(SysU8 *m,SysU32 j,SysU32 t);
-
+    SysC8 Remapping(SysC8 c);
 };
 
 #endif

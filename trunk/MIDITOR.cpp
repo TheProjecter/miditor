@@ -25,6 +25,7 @@ MIDITOR::MIDITOR(SysU32 MaxE,SysU32 MaxEventDataLen)
     Key=69;
     Time=0;
     BarTime=1;
+    for(SysU32 i=0; i<MaxRemaps; i++) Remap[i]=i;
     VelocityDown=VelocityUp=127;
     NoteCallBack=DefaultNoteCallBack;
     IsNoteCallBack=DefaultIsNoteCallBack;
@@ -721,6 +722,15 @@ void MIDITOR::MacroDefine(const SysC8 *m)
     SysAssert(0);//Macro definition error!
 }
 
+SysC8 MIDITOR::Remapping(SysC8 c)
+{
+    if(RLevel!=1) return c;
+    SysAssert(c>32);
+    SysAssert(c<MaxRemaps);
+    //if(c!=Remap[c&0x7f]) SysODS("[Level %d]:Remapped %c %c\n",RLevel,c,Remap[c&0x7f]);
+    return Remap[(c&0x7f)];
+}
+
 SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
 {
     RLevel++;
@@ -769,6 +779,16 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
                     //Display("Macro Defining:",&b[i],&b[i+8]);
                     MacroDefine(&b[i+2]);
                 }
+                else if(b[i+1]==']')
+                {
+                    SysAssert(b[i+3]=='[');
+                    SysAssert(b[i+5]=='>');
+                    SysAssert(b[i+3]>32);
+                    SysAssert(b[i+3]<MaxRemaps);
+                    SysAssert(b[i+5]>32);
+                    SysAssert(b[i+5]<MaxRemaps);
+                    Remap[b[i+2]&0x7f]=(b[i+4]&0x7f);
+                }
                 i+=EndOfMacro(&b[i]);
                 i++;
                 continue;
@@ -793,7 +813,12 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
                     const SysC8 *s=Macro[f][1];
                     SysS32 l=PreProcess(s,Macro[f][2]-Macro[f][1],&WorkMem[j],MaxWorkMemory-j);
                     SysAssert(l>=0);
-                    j+=l;
+                    while(l)
+                    {
+                        WorkMem[j]=Remapping(WorkMem[j]);
+                        j++;
+                        l--;
+                    }
                     r--;
                 }
                 //SysODS("(%d)",RLevel);
@@ -801,10 +826,14 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
                 i+=MacroNameLen(f);
             }
             else
-                WorkMem[j++]=b[i++];
+            {
+                WorkMem[j++]=Remapping(b[i++]);
+            }
         }
         else
-            WorkMem[j++]=b[i++];
+        {
+            WorkMem[j++]=Remapping(b[i++]);
+        }
         SysAssert(j<wl);
     }
     WorkMem[j]=0;

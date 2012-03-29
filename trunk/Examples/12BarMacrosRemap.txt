@@ -1,0 +1,24 @@
+<*
+12 Bar Blues EADGBE Using Macros
+To export this as a MIDI file use... MIDITOR 12BarMacros.TXT 12BarMacros.MID 
+*>
+<* Start Of Song *>
+	<]_[-> <*Remap _ to -!*>
+	<]-[_> <*Remap - to _!*>
+	|[T(0)C(0)D(1)M(2) (C0) (1E)]| <* Time 0 Channel 0 Bar Duration 1 Second Patch(Instrument) Change To Guitar*>
+	
+	<[BarI]
+			|[S(+) K(69)]|<*A*>|2.2_4.4_|
+			|[R(_) K(64)]|<*E*>|0.0_0.0_|
+	>
+	<[BarIV]
+			|[S(+) K(74)]|<*D*>|2.2_4.4_|
+			|[R(_) K(69)]|<*A*>|0.0_0.0_|
+	>
+	<[BarV]
+			|[S(+) K(74)]|<*D*>|4.4_6.6_|
+			|[R(_) K(69)]|<*A*>|2.2_2.2_|
+	>
+	|<4X>BarI|<2X>BarIV|<2X>BarI|BarV|BarIV|<2X>BarI|
+<* End Of Song *>
+
