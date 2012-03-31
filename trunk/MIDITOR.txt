@@ -4,25 +4,24 @@ Example Song & Specification.
 To export this as a MIDI file use... MIDITOR MIDITOR.TXT MIDITOR.MID 
 *>
 <* Start Of Song:ICE Corps By G.S.2012 *>
-	<*Macro definitions*>
-	<[V][+7][+12]>					<*Power chord added when V is invoked after any note as in Intro*>
-        <[SectionB]|0003.03.|0003.03.|0003.0..|>
-	<[SectionC]|00080007|0008-7-5|00070005|0007-5-3|0003.0..|0003.0..|0003.5 .2|0003.0..|0003.0..|0003.T,.0|>
+	|[T(0)D(1.2)]|	<*Time signature of bar duration 1.2 seconds, 50 Bars a second. The song is scored at 2 beats a bar, 100 BPM*>        
 
-	<*Intro(Guitar):Power chord and full bend down over 1 bar on last note*>
-        |[T(0)C(0)K(57)D(4)M(2)(C0)(1E)]| |3-0---0-|3-2-0 ---| |3-0---0-|3---T,---|0V[b-1]|
-        
-	<*Macro definitions*>
-        <[B].[+35]><[S].[+38]><[C].[+49]>		<*Defining drums Bass Snare & Cymbal using percussion notes added to rests which have a value of 0*>        
-        <[SectionA]|BBBS.BS.|BBBS.BS.|BBBS.C..|> 	<*Macro SectionA begins with S but since it has more characters it has priority over the drum symbol macro S*>
-	<*Main(Drums): Channel C(9) percussion S() Stores current song position, R() will then be used by parallel bars*>
-	|[S()C(9)D(1.25)K(105)]|
-        |<4X>SectionA|BBBSBBBS|BBBS.S.C|BBBSBBBS|BBBS.S.C|BBBS.C..|BBBS.C..|BBBS.S.C|BBBS.C..|BBBS.C..|BBBS.S.C|
-	<*Main(Guitar): Parallel to drums*>
-        |[R()C(1)M(2)(C1)(1D)K(45)]|
-	<[PowerChord]|[S(+)]|PowerChordArg|[R()K(+7)]|PowerChordArg|[R(-)K(+5)]|PowerChordArg|[K(-12)]|>
-	<[PowerChordArg]<4X>SectionB>|PowerChord|
-	<[PowerChordArg]SectionC>|PowerChord|
+	<[V][+7][+12]>	<*Macro defined when V is invoked after any note as in Intro a 5th and an octave is added to note*>
+	<*Intro(Guitar):V macro used and full bend down over 1 bar on last note*>
+	|[C(0)K(57)M(2)(C0)(1E)]| |3-|0-|--|0-|3-|2-|0-|--| |3-|0-|--|0-|3-|--|T,-|--|0V[b-1]|-|    <*Play Intro*>    
+
+        <[B].[+35]><[S].[+38]><[C].[+49]>		<*Define drum Bass Snare & Cymbal macros with percusive notes added to rests which have a value of 0*>        
+        <[SectionMDrums]|BBBS.BS.|BBBS.BS.|BBBS.C..|> 	<*Define middle section for drums*>
+        <[SectionMGuitar]|0003.03.|0003.03.|0003.0..|>  <*Macro defined for middle section for guitar*>
+	<[SectionEndDrums]|BBBSBBBS|BBBS.S.C|BBBSBBBS|BBBS.S.C|BBBS.C..|BBBS.C..|BBBS.S.C|BBBS.C..|BBBS.C..|BBBS.S.C|><*Macro for end drums*>
+	<[SectionEndGuitar]|00080007|0008-7-5|00070005|0007-5-3|0003.0..|0003.0..|0003.5 .2|0003.0..|0003.0..|0003.T,.0|> <*Macro for end guitar*>
+	
+	|[S()C(9)K(105)]|	<*Main(Drums): Channel C(9) percussion S() Stores current song position, R() will then be used by parallel bars for guitar*>
+        |<4X>SectionMDrums|SectionEndDrums| <*Play 4 x middle of drums followed by end for drums*>
+        |[R()C(1)M(2)(C1)(1D)K(45)]| <*Main(Guitar): Restore saved song position to be at same point as beginning of drums at middle section*>
+	<[PowerChord]|[S(+)]|%1|[R()K(+7)]|%1|[R(-)K(+5)]|%1|[K(-12)]|> <*%1 macro is used as an argument for power chord macro*>
+	<[%1]<4X>SectionMGuitar>|PowerChord| <*Play guitar using power chord macro for 4 x middle*>
+	<[%1]SectionEndGuitar>|PowerChord|   <*For end as well*>
 <* End Of Song *>
 <*
 MIDITOR Specification 1.0 By G.Symons 2012
