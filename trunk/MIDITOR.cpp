@@ -8,6 +8,7 @@
 
 static const SysF32 Bias=0.0001f;
 
+SysU32 MIDITOR::BPMToUSPQN(SysU32 BPM){return 60000000/BPM;}
 MIDITOR::MIDITOR(SysU32 MaxE,SysU32 MaxEventDataLen)
 {
     MaxEvents=MaxE;
@@ -29,6 +30,7 @@ MIDITOR::MIDITOR(SysU32 MaxE,SysU32 MaxEventDataLen)
     VelocityDown=VelocityUp=127;
     NoteCallBack=DefaultNoteCallBack;
     IsNoteCallBack=DefaultIsNoteCallBack;
+    MidUSPerQuarterNote=BPMToUSPQN(120),MidTicksPerBeat=960;
 }
 MIDITOR::~MIDITOR()
 {
@@ -158,12 +160,12 @@ struct MidHdrS
 
 SysU32 MIDITOR::SToTicks(SysF32 t)
 {
-    return t*MidBPM*MidTicksPerBeat/60.0f;
+    return ((t*1000000)/MidUSPerQuarterNote)*MidTicksPerBeat;
 }
 
 SysF32 MIDITOR::TicksToS(SysU32 t)
 {
-    return t*60.0f/(MidBPM*MidTicksPerBeat);
+    return (t*(MidUSPerQuarterNote/1000000.0f))/MidTicksPerBeat;
 }
 
 SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
@@ -172,7 +174,7 @@ SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
     SysU32 i=0;
     SysU8 b[8];
     l+=t;
-    //SysODS("%fS:%d 0x%08x",TicksToS(l),t,t);
+    //SysODS("%fS: %08x %08x\n",TicksToS(l),l,t);
     do
     {
         b[i]=t&0x7f;
@@ -212,6 +214,13 @@ void MIDITOR::Render(const SysC8 *MIDIFileName)
     j+=sizeof(h);
     SysS32 i=0;
     SysU32 l=0;
+    wm[j++]=0;
+    wm[j++]=0xff;
+    wm[j++]=0x51;
+    wm[j++]=0x03;
+    wm[j++]=(MidUSPerQuarterNote>>16)&0xff;
+    wm[j++]=(MidUSPerQuarterNote>>8 )&0xff;
+    wm[j++]=(MidUSPerQuarterNote>>0 )&0xff;
     while(i<EventIndex)
     {
         //SysODS("%f:   ",Event[i].Time);
@@ -420,6 +429,10 @@ void MIDITOR::BarCommands(const SysC8 *b,SysS32 j)
             case 'K':
                 Key=GetRelOrAbsArg(&b[j+2],Key);
                 //SysODS("Key:%d\n",Key);
+                break;
+            case 'B':
+                MidUSPerQuarterNote=BPMToUSPQN(GetRelOrAbsArg(&b[j+2],0));
+                //SysODS("BPM:%f USPQN:%d\n",GetRelOrAbsArg(&b[j+2],0),MidUSPerQuarterNote);
                 break;
             case 'C':
                 Channel=GetRelOrAbsArg(&b[j+2],Channel);
