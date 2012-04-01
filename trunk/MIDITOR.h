@@ -51,7 +51,7 @@ struct MIDITOR
     SysS32 IsElement(SysC8 c);
     SysS32 NextElement(const SysC8 *b,SysS32 i);
     SysS32 NotesInBar(const SysC8 *b,SysS32 i);
-    SysS32 HoldsAfterNote(const SysC8 *b,SysS32 i);
+    SysF32 DurationAfterNote(const SysC8 *b,SysS32 i);
     static void DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i);
     static SysS32 DefaultIsNoteCallBack(SysC8 c);
     const SysC8 *Macro[MaxMacros][3];

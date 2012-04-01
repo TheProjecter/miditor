@@ -308,22 +308,28 @@ SysS32 MIDITOR::NotesInBar(const SysC8 *b,SysS32 i)
     return n;
 }
 
-SysS32 MIDITOR::HoldsAfterNote(const SysC8 *b,SysS32 i)
+SysF32 MIDITOR::DurationAfterNote(const SysC8 *b,SysS32 i)
 {
-    SysS32 h=0;
+    SysF32 d=0,t=NoteTime;
     i++;
     while(b[i])
     {
         i+=NextElement(b,i);
         if(b[i]=='-')
-            h++;
-        else if(b[i]!='|')
+            d+=t;
+        else if(b[i]=='|')
+        {
+            SysS32 n=NotesInBar(b,i);
+            if(n) t=BarTime/n;
+
+        }
+        else
             break;
         i++;
 
     }
     //SysODS("%d Holds\n",h);
-    return h;
+    return d;
 }
 
 SysU32 GetHex1(const SysC8 *s)
@@ -386,7 +392,7 @@ void MIDITOR::BarCommands(const SysC8 *b,SysS32 j)
     while(b[j]&&(b[j]!='|'))
     {
         if(b[j+1]=='(')
-            switch(b[j])
+            switch(toupper(b[j]))
             {
             case 'M':
                 if(GetHex1(&b[j+1])==2)
@@ -500,95 +506,79 @@ void MIDITOR::DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i)
     else
         n+=p->Key;
 
-    SysS32 h=p->HoldsAfterNote(b,i);
     SysS32 l=p->NextElement(b,i+1);
-    SysF32 d=p->NoteTime*(1+h)-Bias;
+    SysF32 d=p->NoteTime+p->DurationAfterNote(b,i)-Bias;
     SysF32 r=0;
     SysF32 a[4];
-    SysU8 a16[4];
 
     for(SysS32 j=(i+1); j<(i+1+l); j++)
     {
-        switch(b[j])
-        {
-        case '\'':
-            n+=12;
-            break;
-        case ',':
-            n-=12;
-            break;
-        case '"':
-            n+=24;
-            break;
-        case ';':
-            n-=24;
-            break;
-        case 'v':
-            a[0]=GetArg(&b[j+1]);
-            if(a[0]<0)
-                p->VelocityDown=a[0];
-            else
-                p->VelocityUp  =a[0];
-            break;
-        case 'b':
-            a[0]=GetArg(&b[j+1]);
-            //SysODS("b %f\n",a[0]);
-            for(SysU32 i=1; i<16; i++) SetPitchWheel(0x2000+((i*a[0])/15.0f)*0x1fff,p->Time+(d*i/15.0f));
-            SetPitchWheel(0x2000,p->Time+d);
-            break;
-        case '+':
-            a[0]=GetArg(&b[j+1]);
-            //SysODS("+ %f\n",a[0]);
-            p->NoteOn(n+a[0],p->VelocityDown,p->Time+r+0);
-            p->NoteOff(n+a[0],p->VelocityUp,p->Time+r+d);
-            break;
-        case 'd':
-            a[0]=GetArg(&b[j+1]);
-            d=(a[0]*p->BarTime);
-            break;
-        case 'r':
-            a[0]=GetArg(&b[j+1]);
-            r=(a[0]*p->BarTime);
-            break;
-        case 'x':
-            NoteEnabled=0;
-            break;
-        case '/':
-            a[0]=GetArg(&b[j+1]);
-            for(SysU32 i=1; i<a[0]; i++)
+        if(b[j+1]!='(')
+            switch(tolower(b[j]))
             {
-                SysF32 t=d/(a[0]-1);
-                SysF32 o=(t*i);
-                p->NoteOn(n+i,p->VelocityDown,p->Time+r+o);
-                p->NoteOff(n+i,p->VelocityUp,p->Time+r+o+t);
+            case '\'':
+                n+=12;
+                break;
+            case ',':
+                n-=12;
+                break;
+            case '"':
+                n+=24;
+                break;
+            case ';':
+                n-=24;
+                break;
+            case 'v':
+                a[0]=GetArg(&b[j+1]);
+                if(a[0]<0)
+                    p->VelocityDown=a[0];
+                else
+                    p->VelocityUp  =a[0];
+                break;
+            case 'b':
+                a[0]=GetArg(&b[j+1]);
+                //SysODS("b %f\n",a[0]);
+                for(SysU32 i=1; i<16; i++) SetPitchWheel(0x2000+((i*a[0])/15.0f)*0x1fff,p->Time+(d*i/15.0f));
+                SetPitchWheel(0x2000,p->Time+d);
+                break;
+            case '+':
+                a[0]=GetArg(&b[j+1]);
+                //SysODS("+ %f\n",a[0]);
+                p->NoteOn(n+a[0],p->VelocityDown,p->Time+r+0);
+                p->NoteOff(n+a[0],p->VelocityUp,p->Time+r+d);
+                break;
+            case 'd':
+                a[0]=GetArg(&b[j+1]);
+                d=(a[0]*p->BarTime);
+                break;
+            case 'r':
+                a[0]=GetArg(&b[j+1]);
+                r=(a[0]*p->BarTime);
+                break;
+            case 'x':
+                NoteEnabled=0;
+                break;
+            case '/':
+                a[0]=GetArg(&b[j+1]);
+                for(SysU32 i=1; i<a[0]; i++)
+                {
+                    SysF32 t=d/(a[0]-1);
+                    SysF32 o=(t*i);
+                    p->NoteOn(n+i,p->VelocityDown,p->Time+r+o);
+                    p->NoteOff(n+i,p->VelocityUp,p->Time+r+o+t);
+                }
+                break;
+            case '\\':
+                a[0]=GetArg(&b[j+1]);
+                for(SysU32 i=1; i<a[0]; i++)
+                {
+                    SysF32 t=d/(a[0]-1);
+                    SysF32 o=(t*i);
+                    p->NoteOn(n-i,p->VelocityDown,p->Time+r+o);
+                    p->NoteOff(n-i,p->VelocityUp,p->Time+r+o+t);
+                }
+                break;
             }
-            break;
-        case '\\':
-            a[0]=GetArg(&b[j+1]);
-            for(SysU32 i=1; i<a[0]; i++)
-            {
-                SysF32 t=d/(a[0]-1);
-                SysF32 o=(t*i);
-                p->NoteOn(n-i,p->VelocityDown,p->Time+r+o);
-                p->NoteOff(n-i,p->VelocityUp,p->Time+r+o+t);
-            }
-            break;
-        case 'm':
-            if(GetHex1(&b[j+1])==2)
-            {
-                GetHex3(&b[j+1],a16);
-                //SysODS("m %x %x\n",a16[1],a16[2]);
-                p->Add(&a16[1],2);
-            }
-            else
-            {
-                SysAssert(GetHex1(&b[j+1])==3);//MIDI message within note modifier must have 2 or 3 arguments defined!
-                GetHex4(&b[j+1],a16);
-                //SysODS("m %x %x %x\n",a16[1],a16[2],a16[3]);
-                p->Add(&a16[1],3);
-            }
-            break;
-        }
     }
     if(NoteEnabled)
     {
