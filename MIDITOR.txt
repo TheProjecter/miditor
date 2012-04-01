@@ -4,7 +4,8 @@ Example Song & Specification.
 To export this as a MIDI file use... MIDITOR MIDITOR.TXT MIDITOR.MID 
 *>
 <* Start Of Song:ICE Corps By G.S.2012 *>
-	|[T(0)D(1.2)]|	<*Time signature of bar duration 1.2 seconds, 50 Bars a minute. The song is scored at 2 beats a bar, 100 BPM*>        
+	|[T(0)D(1.2)]|<*Time signature of bar duration 1.2 seconds, 50 Bars a minute.*>
+	|[B(100)]|<*BPM. The song is scored at 2 beats a bar, 100 BPM, this information is not required it's just useful for importers.*>        
 
 	<[V][+7][+12]>	<*Macro defined when V is invoked after any note as in Intro a 5th and an octave is added to note*>
 	<*Intro(Guitar):V macro used and full bend down over 1 bar on last note*>
