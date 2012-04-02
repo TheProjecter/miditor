@@ -20,10 +20,10 @@ SysS32 SysSave(SysU32 Flags,const SysC8 *FileName,SysU32 Size,void *Buffer);
 
 #ifdef SYS_DEBUG_ODS
 void SysODS(const SysC8 *DebugString,...);
-#define SysAssert(exp)  if (!(exp)) {SysODS( "SysAssert:%s File:%s Base File:%s Line:%d\n",#exp, __FILE__, __BASE_FILE__, __LINE__ );exit(1);}
+#define SysAssert(exp,msg)  if (!(exp)) {SysODS( "SysAssert:%s\n%s File:%s Base File:%s Line:%d\n",msg,#exp, __FILE__, __BASE_FILE__, __LINE__ );exit(1);}
 #else
 inline void SysODS(const SysC8 *DebugString,...) {};
-#define SysAssert(exp)
+#define SysAssert(exp,msg)
 #endif
 
 #endif
