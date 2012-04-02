@@ -8,7 +8,10 @@
 
 static const SysF32 Bias=0.0001f;
 
-SysU32 MIDITOR::BPMToUSPQN(SysU32 BPM){return 60000000/BPM;}
+SysU32 MIDITOR::BPMToUSPQN(SysU32 BPM)
+{
+    return 60000000/BPM;
+}
 MIDITOR::MIDITOR(SysU32 MaxE,SysU32 MaxEventDataLen)
 {
     MaxEvents=MaxE;
@@ -46,8 +49,8 @@ void MIDITOR::Add(const SysU8 *s,SysU32 l,SysF32 t)
     Event[EventIndex].DataLen=l;
     EventIndex++;
     DataIndex+=l;
-    SysAssert(EventIndex<MaxEvents);
-    SysAssert(DataIndex<MaxData);
+    SysAssert(EventIndex<MaxEvents,"Out of event memory!");
+    SysAssert(DataIndex<MaxData,"Out of data memory!");
 }
 void MIDITOR::Add3(SysU8 a,SysU8 b,SysU8 c,SysF32 t)
 {
@@ -180,7 +183,7 @@ SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
         b[i]=t&0x7f;
         t>>=7;
         i++;
-        SysAssert(i<4);
+        SysAssert(i<4,"Delta time too large!");
     }
     while(t);
 
@@ -209,23 +212,16 @@ void MIDITOR::Render(const SysC8 *MIDIFileName)
         {'M','T','r','k'},
         {0,0,0,0},
     };
-    SysAssert(sizeof(h)==(4*4+3*2));
+    SysAssert(sizeof(h)==(4*4+3*2),"Header error!");
     memcpy(&wm[j],&h,sizeof(h));
     j+=sizeof(h);
     SysS32 i=0;
     SysU32 l=0;
-    wm[j++]=0;
-    wm[j++]=0xff;
-    wm[j++]=0x51;
-    wm[j++]=0x03;
-    wm[j++]=(MidUSPerQuarterNote>>16)&0xff;
-    wm[j++]=(MidUSPerQuarterNote>>8 )&0xff;
-    wm[j++]=(MidUSPerQuarterNote>>0 )&0xff;
     while(i<EventIndex)
     {
         //SysODS("%f:   ",Event[i].Time);
         SysU32 d=SToTicks(Event[i].Time)-l;
-        SysAssert(d>=0);
+        SysAssert(d>=0,"");
         j=DeltaTime(wm,j,d);
         for(SysU32 k=0; k<Event[i].DataLen; k++)
         {
@@ -233,7 +229,7 @@ void MIDITOR::Render(const SysC8 *MIDIFileName)
             j++;
         }
         l=SToTicks(Event[i].Time);
-        SysAssert(l>=0);
+        SysAssert(l>=0,"");
         i++;
     }
     wm[j++]=0;
@@ -256,7 +252,7 @@ SysS32 MIDITOR::Next(const SysC8 *b,SysS32 i,SysC8 c)
     SysS32 n=0;
     while(b[i+n]!=c)
     {
-        SysAssert(b[i+n]);//Unexpected end!
+        SysAssert(b[i+n],"Unexpected end!");
         n++;
     }
     return n;
@@ -276,7 +272,7 @@ SysS32 MIDITOR::NoteValue(SysC8 c)
     case '-':
         return -2;
     }
-    SysAssert(0);//Unrecognised note element!
+    SysAssert(0,"Unrecognised note element!");
     return 0;
 }
 
@@ -397,10 +393,17 @@ void MIDITOR::BarCommands(const SysC8 *b,SysS32 j)
 {
     SysU8 a16[4];
 
+    SysS32 InBrackets=0;
+
     j++;
     while(b[j]&&(b[j]!='|'))
     {
+        if(b[j]=='[') InBrackets++;
+        if(b[j]==']') InBrackets--;
+        SysAssert(InBrackets>=0,"Specified ] with no previous [!");
         if(b[j+1]=='(')
+        {
+            SysAssert(InBrackets,"Bar commands must be within [ ]!");
             switch(toupper(b[j]))
             {
             case 'M':
@@ -412,7 +415,7 @@ void MIDITOR::BarCommands(const SysC8 *b,SysS32 j)
                 }
                 else
                 {
-                    SysAssert(GetHex1(&b[j+1])==3);//Hex arguments to MIDI message must define either 2 or 3 arguments!
+                    SysAssert(GetHex1(&b[j+1])==3,"Hex arguments to MIDI message must define either 2 or 3 arguments!");
                     GetHex4(&b[j+1],a16);
                     //SysODS("M: %x %x %x\n",a16[1],a16[2],a16[3]);
                     Add(&a16[1],3);
@@ -431,24 +434,29 @@ void MIDITOR::BarCommands(const SysC8 *b,SysS32 j)
                 //SysODS("Key:%d\n",Key);
                 break;
             case 'B':
+            {
                 MidUSPerQuarterNote=BPMToUSPQN(GetRelOrAbsArg(&b[j+2],0));
+                SysU8 b[6]= {0xff,0x51,0x03,((MidUSPerQuarterNote>>16)&0xff),((MidUSPerQuarterNote>>8 )&0xff),((MidUSPerQuarterNote>>0 )&0xff)};
+                Add(b,6);
                 //SysODS("BPM:%f USPQN:%d\n",GetRelOrAbsArg(&b[j+2],0),MidUSPerQuarterNote);
-                break;
+            }
+            break;
             case 'C':
                 Channel=GetRelOrAbsArg(&b[j+2],Channel);
                 //SysODS("Channel:%d\n",Channel);
                 break;
             case 'S':
                 if(b[j+1]=='+') SavedTimeIndex++;
-                SysAssert(SavedTimeIndex<MaxSavedTimes);
+                SysAssert(SavedTimeIndex<MaxSavedTimes,"Out of time save memory!");
                 SavedTime[SavedTimeIndex]=Time;
                 break;
             case 'R':
                 Time=SavedTime[SavedTimeIndex];
                 if(b[j+1]=='-') SavedTimeIndex--;
-                SysAssert(SavedTimeIndex>=0);
+                SysAssert(SavedTimeIndex>=0,"Illegal restore!");
                 break;
             }
+        }
         j++;
     }
 }
@@ -457,10 +465,10 @@ void MIDITOR::Bars(const SysC8 *ob,SysS32 r)
 {
     SysC8 *b=new SysC8[MaxWorkMemory];
     SysS32 bl=PreProcess(ob,strlen(ob),b,MaxWorkMemory);
-    SysAssert(bl>=0);
+    SysAssert(bl>=0,"");
     while(r)
     {
-        SysAssert(Channel<16);//Only 16 MIDI channels!
+        SysAssert(Channel<16,"Only 16 MIDI channels!");
         SysS32 l=strlen(b);
         SysS32 i=0;
         NoteTime=1;
@@ -468,8 +476,7 @@ void MIDITOR::Bars(const SysC8 *ob,SysS32 r)
         while(b[i])
         {
             while(b[i]<=' ') i++;
-            if(!IsElement(b[i])) SysODS("Not recognised [%d:%c %d 0x%x]\n",i,b[i],b[i],b[i]);
-            SysAssert(IsElement(b[i]));//Unrecognised note element!
+            SysAssert(IsElement(b[i]),"Unrecognised note element!");
             if(IsNoteCallBack(b[i]))
             {
                 //SysODS("%d:Note:%c %f %f\n",i,b[i],Time,NoteTime);
@@ -479,12 +486,12 @@ void MIDITOR::Bars(const SysC8 *ob,SysS32 r)
             else
             {
                 //SysODS("%d:|:%c %f %f\n",i,b[i],Time,NoteTime);
-                SysAssert(b[i]=='|');//Expecting bar!
+                SysAssert(b[i]=='|',"Expecting bar!");
                 BarCommands(b,i);
                 SysS32 n=NotesInBar(b,i);
                 if(n) NoteTime=BarTime/n;
             }
-            SysAssert(i<l);//Out of range!
+            SysAssert(i<l,"Out of range!");
             i++;
             i+=NextElement(b,i);
         }
@@ -523,9 +530,13 @@ void MIDITOR::DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i)
     SysF32 d=p->NoteTime+p->DurationAfterNote(b,i)-Bias;
     SysF32 r=0;
     SysF32 a[4];
+    SysS32 InBrackets=0;
 
     for(SysS32 j=(i+1); j<(i+1+l); j++)
     {
+        if(b[j]=='[') InBrackets++;
+        if(b[j]==']') InBrackets--;
+        SysAssert(InBrackets>=0,"Specified ] with no previous [!");
         if(b[j+1]!='(')
             switch(tolower(b[j]))
             {
@@ -542,6 +553,7 @@ void MIDITOR::DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i)
                 n-=24;
                 break;
             case 'v':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 if(a[0]<0)
                     p->VelocityDown=a[0];
@@ -549,22 +561,26 @@ void MIDITOR::DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i)
                     p->VelocityUp  =a[0];
                 break;
             case 'b':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 //SysODS("b %f\n",a[0]);
                 for(SysU32 i=1; i<16; i++) SetPitchWheel(0x2000+((i*a[0])/15.0f)*0x1fff,p->Time+(d*i/15.0f));
                 SetPitchWheel(0x2000,p->Time+d);
                 break;
             case '+':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 //SysODS("+ %f\n",a[0]);
                 p->NoteOn(n+a[0],p->VelocityDown,p->Time+r+0);
                 p->NoteOff(n+a[0],p->VelocityUp,p->Time+r+d);
                 break;
             case 'd':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 d=(a[0]*p->BarTime);
                 break;
             case 'r':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 r=(a[0]*p->BarTime);
                 break;
@@ -572,6 +588,7 @@ void MIDITOR::DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i)
                 NoteEnabled=0;
                 break;
             case '/':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 for(SysU32 i=1; i<a[0]; i++)
                 {
@@ -582,6 +599,7 @@ void MIDITOR::DefaultNoteCallBack(MIDITOR *p,const SysC8 *b,SysS32 i)
                 }
                 break;
             case '\\':
+                SysAssert(InBrackets,"Note modifiers with parameters must be within []!");
                 a[0]=GetArg(&b[j+1]);
                 for(SysU32 i=1; i<a[0]; i++)
                 {
@@ -659,8 +677,8 @@ void MIDITOR::MacrosSort(void)
 
 SysS32 MIDITOR::MacroSame(const SysC8 *a,const SysC8 *b)
 {
-    SysAssert(a);
-    SysAssert(b);
+    SysAssert(a,"Null!");
+    SysAssert(b,"Null!");
     SysU32 i=0;
     while(a[i]!=']')
     {
@@ -684,7 +702,7 @@ SysS32 MIDITOR::EndOfMacro(const SysC8 *b)
     while(InMBrackets)
     {
         i++;
-        SysAssert(b[i]);
+        SysAssert(b[i],"Unexpected end of file!");
         if(b[i]=='<') InMBrackets++;
         if(b[i]=='>') InMBrackets--;
     }
@@ -716,21 +734,21 @@ void MIDITOR::MacroDefine(const SysC8 *m)
             else
             {
                 MacroIndex++;
-                SysAssert(MacroIndex<MaxMacros);
+                SysAssert(MacroIndex<MaxMacros,"Out of macro memory!");
             }
             MacrosSort();
             return;
         }
         i++;
     }
-    SysAssert(0);//Macro definition error!
+    SysAssert(0,"Macro definition error!");
 }
 
 SysC8 MIDITOR::Remapping(SysC8 c)
 {
     if(RLevel!=1) return c;
-    SysAssert(c>32);
-    SysAssert(c<MaxRemaps);
+    SysAssert(c>32,"Illegal character!");
+    SysAssert(c<MaxRemaps,"Illegal character!");
     //if(c!=Remap[c&0x7f]) SysODS("[Level %d]:Remapped %c %c\n",RLevel,c,Remap[c&0x7f]);
     return Remap[(c&0x7f)];
 }
@@ -773,7 +791,7 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
         }
         if(b[i]=='[') InBrackets++;
         if(b[i]==']') InBrackets--;
-        SysAssert(InBrackets>=0);//] specified with no previous [!
+        SysAssert(InBrackets>=0,"Specified ] with no previous [!");
         if(!InBrackets)
         {
             if(b[i]=='<')
@@ -785,12 +803,12 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
                 }
                 else if(b[i+1]==']')
                 {
-                    SysAssert(b[i+3]=='[');
-                    SysAssert(b[i+5]=='>');
-                    SysAssert(b[i+3]>32);
-                    SysAssert(b[i+3]<MaxRemaps);
-                    SysAssert(b[i+5]>32);
-                    SysAssert(b[i+5]<MaxRemaps);
+                    SysAssert(b[i+3]=='[',"Remap format bad!");
+                    SysAssert(b[i+5]=='>',"Remap format bad!");
+                    SysAssert(b[i+3]>32,"Remap format bad!");
+                    SysAssert(b[i+3]<MaxRemaps,"Remap format bad!");
+                    SysAssert(b[i+5]>32,"Remap format bad!");
+                    SysAssert(b[i+5]<MaxRemaps,"Remap format bad!");
                     Remap[b[i+2]&0x7f]=(b[i+4]&0x7f);
                 }
                 i+=EndOfMacro(&b[i]);
@@ -807,7 +825,7 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
                 {
                     while(b[o]!='<')
                     {
-                        SysAssert(o>=0);//No preceding < for macro multiple!
+                        SysAssert(o>=0,"No preceding < for macro multiple!");
                         o--;
                     }
                     sscanf(&b[o+1],"%d",&r);
@@ -816,7 +834,7 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
                 {
                     const SysC8 *s=Macro[f][1];
                     SysS32 l=PreProcess(s,Macro[f][2]-Macro[f][1],&WorkMem[j],MaxWorkMemory-j);
-                    SysAssert(l>=0);
+                    SysAssert(l>=0,"");
                     while(l)
                     {
                         WorkMem[j]=Remapping(WorkMem[j]);
@@ -838,7 +856,7 @@ SysS32 MIDITOR::PreProcess(const SysC8 *b,SysU32 bl,SysC8 *wm,SysU32 wl)
         {
             WorkMem[j++]=Remapping(b[i++]);
         }
-        SysAssert(j<wl);
+        SysAssert(j<wl,"Out of work memory!");
     }
     WorkMem[j]=0;
     //SysODS("[Level %d]: %s[End]\n",RLevel,WorkMem);
