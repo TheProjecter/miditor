@@ -173,11 +173,8 @@ SysF32 MIDITOR::TicksToS(SysU32 t)
 
 SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
 {
-    static SysU32 l=0;
     SysU32 i=0;
     SysU8 b[8];
-    l+=t;
-    //SysODS("%fS: %08x %08x\n",TicksToS(l),l,t);
     do
     {
         b[i]=t&0x7f;
@@ -200,6 +197,7 @@ SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
 
 void MIDITOR::Render(const SysC8 *MIDIFileName)
 {
+    MidUSPerQuarterNote=BPMToUSPQN(120);
     SysU8 *wm=new SysU8 [MaxWorkMemory];
     SysU32 j=0;
     MidHdrS h=
@@ -216,19 +214,25 @@ void MIDITOR::Render(const SysC8 *MIDIFileName)
     memcpy(&wm[j],&h,sizeof(h));
     j+=sizeof(h);
     SysS32 i=0;
-    SysU32 l=0;
+    SysF32 l=0;
     while(i<EventIndex)
     {
-        //SysODS("%f:   ",Event[i].Time);
-        SysU32 d=SToTicks(Event[i].Time)-l;
+        //SysODS("\n%f:   ",Event[i].Time);
+        SysU32 d=SToTicks(Event[i].Time-l);
         SysAssert(d>=0,"");
         j=DeltaTime(wm,j,d);
         for(SysU32 k=0; k<Event[i].DataLen; k++)
         {
             wm[j]=Data[Event[i].DataIndex+k];
+            //SysODS("0x%02x ",wm[j]);
             j++;
         }
-        l=SToTicks(Event[i].Time);
+        l=Event[i].Time;
+        SysU8 *m=&wm[j-6];
+        if((m[0]==0xff)&&(m[1]==0x51)&&(m[2]==0x03))
+        {
+            MidUSPerQuarterNote=(m[3]<<16)|(m[4]<<8)|(m[5]<<0);
+        }
         SysAssert(l>=0,"");
         i++;
     }
@@ -435,10 +439,10 @@ void MIDITOR::BarCommands(const SysC8 *b,SysS32 j)
                 break;
             case 'B':
             {
-                MidUSPerQuarterNote=BPMToUSPQN(GetRelOrAbsArg(&b[j+2],0));
-                SysU8 b[6]= {0xff,0x51,0x03,((MidUSPerQuarterNote>>16)&0xff),((MidUSPerQuarterNote>>8 )&0xff),((MidUSPerQuarterNote>>0 )&0xff)};
-                Add(b,6);
-                //SysODS("BPM:%f USPQN:%d\n",GetRelOrAbsArg(&b[j+2],0),MidUSPerQuarterNote);
+                SysU32 upq=BPMToUSPQN(GetRelOrAbsArg(&b[j+2],0));
+                SysU8 m[6]= {0xff,0x51,0x03,((upq>>16)&0xff),((upq>>8)&0xff),((upq>>0)&0xff)};
+                Add(m,6);
+                //SysODS("BPM:%f USPQN:%d\n",GetRelOrAbsArg(&b[j+2],0),upq);
             }
             break;
             case 'C':
