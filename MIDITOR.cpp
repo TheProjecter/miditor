@@ -180,7 +180,7 @@ SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
         b[i]=t&0x7f;
         t>>=7;
         i++;
-        SysAssert(i<4,"Delta time too large!");
+        SysAssert(i<5,"Delta time too large!");
     }
     while(t);
 
