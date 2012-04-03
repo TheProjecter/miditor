@@ -33,7 +33,7 @@ MIDITOR::MIDITOR(SysU32 MaxE,SysU32 MaxEventDataLen)
     VelocityDown=VelocityUp=127;
     NoteCallBack=DefaultNoteCallBack;
     IsNoteCallBack=DefaultIsNoteCallBack;
-    MidUSPerQuarterNote=BPMToUSPQN(120),MidTicksPerBeat=960;
+    MidUSPerQuarterNote=BPMToUSPQN(120);
 }
 MIDITOR::~MIDITOR()
 {
@@ -163,12 +163,12 @@ struct MidHdrS
 
 SysU32 MIDITOR::SToTicks(SysF32 t)
 {
-    return ((t*1000000)/MidUSPerQuarterNote)*MidTicksPerBeat;
+    return ((t*1000000)/MidUSPerQuarterNote)*MidTicksPerQuarterNote;
 }
 
 SysF32 MIDITOR::TicksToS(SysU32 t)
 {
-    return (t*(MidUSPerQuarterNote/1000000.0f))/MidTicksPerBeat;
+    return (t*(MidUSPerQuarterNote/1000000.0f))/MidTicksPerQuarterNote;
 }
 
 SysU32 MIDITOR::DeltaTime(SysU8 *m,SysU32 j,SysU32 t)
@@ -206,7 +206,7 @@ void MIDITOR::Render(const SysC8 *MIDIFileName)
         {0,0,0,6},
         {0,0},
         {0,1},
-        {(MidTicksPerBeat>>8)&0xff,MidTicksPerBeat&0xff},
+        {(MidTicksPerQuarterNote>>8)&0xff,MidTicksPerQuarterNote&0xff},
         {'M','T','r','k'},
         {0,0,0,0},
     };
